@@ -1,6 +1,101 @@
 #include <stdio.h>
 #include <SDL.h>
+#include <stdbool.h>
+
+#include "configuration.h"
+#include "shapes.h"
+
+bool initialise_window(void);
+void process_input(void);
+void update(void);
+void render(void);
+void destroy_window(void);
+
+bool game_running;
+SDL_Window* window;
+SDL_Surface* surface;
+SDL_Renderer* renderer;
 
 int main(int argc, char *argv[]){
-    printf("Hello world!");
+    game_running = initialise_window();
+
+    while(game_running){
+        process_input();
+        update();
+        render();
+    }
+
+    destroy_window();
+    return 0;
+}
+
+bool initialise_window(void){
+    if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
+        printf("Error initalising SDL: %s",SDL_GetError());
+        return false;
+    }
+    
+    window = SDL_CreateWindow("SDL Pong", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    if(window == NULL){
+        printf("Window could not be created!: %s",SDL_GetError());
+        return false;
+    }
+
+    renderer = SDL_CreateRenderer(window, -1, 0);
+}
+
+
+void process_input(void){
+    SDL_Event e;
+    while (SDL_PollEvent(&e) != FALSE){
+
+       if(e.type == SDL_QUIT){
+        game_running = false;
+        return;
+       }
+
+       else if(e.type == SDL_KEYDOWN){
+        switch (e.key.keysym.sym)
+        {
+            case SDLK_ESCAPE:
+                game_running = false;
+                break;
+        }
+       }
+    }
+}
+
+void update(void){
+
+}
+
+void render(void){
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    // SDL_Rect fillRect = {
+    //     WINDOW_WIDTH / 4,
+    //     WINDOW_HEIGHT / 2,
+    //     WINDOW_WIDTH / 4,
+    //     WINDOW_HEIGHT / 2
+    // };
+
+    SDL_Rect fillRect = {
+        100,
+        100,
+        100,
+        100
+    };
+
+    SDL_SetRenderDrawColor(renderer,0xFF, 0x00, 0x00, 0xFF);
+    SDL_RenderFillRect(renderer, &fillRect);
+
+    SDL_RenderDrawPoint(renderer,400,400);
+    SDL_RenderPresent(renderer);
+}
+
+void destroy_window(void){
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }
