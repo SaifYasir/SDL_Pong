@@ -5,11 +5,14 @@
 #include "configuration.h"
 #include "shapes.h"
 
+#include "node.h"
+
 bool initialise_window(void);
 void process_input(void);
 void update(void);
 void render(void);
 void destroy_window(void);
+void draw_circle(int x_pos_midpoint, int y_pos_midpoint, int radius);
 
 bool game_running;
 SDL_Window* window;
@@ -80,17 +83,20 @@ void render(void){
     //     WINDOW_HEIGHT / 2
     // };
 
-    SDL_Rect fillRect = {
-        100,
-        100,
-        100,
-        100
-    };
+    // SDL_Rect fillRect = {
+    //     100,
+    //     100,
+    //     100,
+    //     100
+    // };
 
     SDL_SetRenderDrawColor(renderer,0xFF, 0x00, 0x00, 0xFF);
-    SDL_RenderFillRect(renderer, &fillRect);
+    // SDL_RenderFillRect(renderer, &fillRect);
 
-    SDL_RenderDrawPoint(renderer,400,400);
+    // SDL_RenderDrawPoint(renderer,400,400);
+
+    draw_circle(400,400,100);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -98,4 +104,14 @@ void destroy_window(void){
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+}
+
+void draw_circle(int x_pos_midpoint, int y_pos_midpoint, int radius){
+    node *coordinates = get_filled_circle(x_pos_midpoint,y_pos_midpoint,radius);
+    while(coordinates != NULL){
+        SDL_RenderDrawPoint(renderer, coordinates -> coordinate[0], coordinates -> coordinate[1]);
+        node *previous_value = coordinates;
+        coordinates = coordinates -> next_ptr;
+        free(previous_value);
+    }
 }

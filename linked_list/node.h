@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct node{
     int coordinate[2];
     struct node *next_ptr;
