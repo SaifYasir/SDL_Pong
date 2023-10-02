@@ -18,6 +18,13 @@ bool game_running;
 SDL_Window* window;
 SDL_Surface* surface;
 SDL_Renderer* renderer;
+int last_frame_time = 0;
+
+struct circle{
+    int x_midpoint;
+    int y_midpoint;
+    int radius;
+} circle;
 
 int main(int argc, char *argv[]){
     game_running = initialise_window();
@@ -45,6 +52,9 @@ bool initialise_window(void){
     }
 
     renderer = SDL_CreateRenderer(window, -1, 0);
+    circle.x_midpoint = 200;
+    circle.y_midpoint = 100;
+    circle.radius = 10;
 }
 
 
@@ -70,6 +80,18 @@ void process_input(void){
 
 void update(void){
 
+    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks64() - last_frame_time);
+    if(time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME){
+        SDL_Delay(time_to_wait);
+    }
+
+    //Get a delta time factory converted to seconds to be used to update my objects
+    float delta_time = (SDL_GetTicks64() - last_frame_time) / 1000.0f;
+
+    last_frame_time = SDL_GetTicks64();
+
+    circle.x_midpoint+= 70 * delta_time;
+    circle.y_midpoint+= 70 * delta_time;
 }
 
 void render(void){
@@ -95,7 +117,7 @@ void render(void){
 
     // SDL_RenderDrawPoint(renderer,400,400);
 
-    draw_circle(400,400,100);
+    draw_circle(circle.x_midpoint,circle.y_midpoint,circle.radius);
 
     SDL_RenderPresent(renderer);
 }
@@ -107,7 +129,7 @@ void destroy_window(void){
 }
 
 void draw_circle(int x_pos_midpoint, int y_pos_midpoint, int radius){
-    node *coordinates = get_filled_circle(x_pos_midpoint,y_pos_midpoint,radius);
+    node *coordinates = get_hollow_circle(x_pos_midpoint,y_pos_midpoint,radius);
     while(coordinates != NULL){
         SDL_RenderDrawPoint(renderer, coordinates -> coordinate[0], coordinates -> coordinate[1]);
         node *previous_value = coordinates;
