@@ -20,6 +20,11 @@ SDL_Surface* surface;
 SDL_Renderer* renderer;
 int last_frame_time = 0;
 
+SDL_Rect left_paddle = {PADDLE_DISTANCE_FROM_BORDER,PADDLE_DISTANCE_FROM_BORDER,PADDLE_WIDTH,PADDLE_HEIGHT};
+SDL_Rect right_paddle = {WINDOW_WIDTH - PADDLE_DISTANCE_FROM_BORDER - PADDLE_WIDTH,PADDLE_DISTANCE_FROM_BORDER,PADDLE_WIDTH,PADDLE_HEIGHT};
+int left_paddle_movement = 0;
+int right_paddle_movement = 0;
+
 struct circle{
     int x_midpoint;
     int y_midpoint;
@@ -52,9 +57,10 @@ bool initialise_window(void){
     }
 
     renderer = SDL_CreateRenderer(window, -1, 0);
+
     circle.x_midpoint = 200;
     circle.y_midpoint = 100;
-    circle.radius = 10;
+    circle.radius = PONG_BALL_RADIUS;
 }
 
 
@@ -73,6 +79,18 @@ void process_input(void){
             case SDLK_ESCAPE:
                 game_running = false;
                 break;
+            case SDLK_w:
+                left_paddle_movement -= PADDLE_SPEED_PER_SECOND;
+                break;
+            case SDLK_s:
+                left_paddle_movement += PADDLE_SPEED_PER_SECOND;
+                break;
+            case SDLK_UP:
+                right_paddle_movement -= PADDLE_SPEED_PER_SECOND;
+                break;
+            case SDLK_DOWN:
+                right_paddle_movement += PADDLE_SPEED_PER_SECOND;
+                break;
         }
        }
     }
@@ -90,8 +108,14 @@ void update(void){
 
     last_frame_time = SDL_GetTicks64();
 
-    circle.x_midpoint+= 70 * delta_time;
-    circle.y_midpoint+= 70 * delta_time;
+    left_paddle.y += left_paddle_movement * delta_time;
+    right_paddle.y += right_paddle_movement * delta_time;
+
+    circle.x_midpoint+= PONG_BALL_SPEED_PER_SECOND * delta_time;
+    circle.y_midpoint+= PONG_BALL_SPEED_PER_SECOND * delta_time;
+
+    left_paddle_movement = 0;
+    right_paddle_movement = 0;
 }
 
 void render(void){
@@ -116,6 +140,8 @@ void render(void){
     // SDL_RenderFillRect(renderer, &fillRect);
 
     // SDL_RenderDrawPoint(renderer,400,400);
+    SDL_RenderFillRect(renderer,&left_paddle);
+    SDL_RenderFillRect(renderer,&right_paddle);
 
     draw_circle(circle.x_midpoint,circle.y_midpoint,circle.radius);
 
