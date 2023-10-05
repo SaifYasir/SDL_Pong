@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <SDL.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "configuration.h"
 #include "shapes.h"
@@ -13,12 +14,17 @@ void update(void);
 void render(void);
 void destroy_window(void);
 void draw_circle(int x_pos_midpoint, int y_pos_midpoint, int radius);
+void move_paddle(SDL_Rect* paddle, int direction, int* paddle_movement_variable);
+void create_halfway_line(void);
+void render_halfway_line(void);
 
 bool game_running;
 SDL_Window* window;
 SDL_Surface* surface;
 SDL_Renderer* renderer;
 int last_frame_time = 0;
+
+node* middle_rectangle_coordinates = NULL;
 
 SDL_Rect left_paddle = {PADDLE_DISTANCE_FROM_BORDER,PADDLE_DISTANCE_FROM_BORDER,PADDLE_WIDTH,PADDLE_HEIGHT};
 SDL_Rect right_paddle = {WINDOW_WIDTH - PADDLE_DISTANCE_FROM_BORDER - PADDLE_WIDTH,PADDLE_DISTANCE_FROM_BORDER,PADDLE_WIDTH,PADDLE_HEIGHT};
@@ -61,35 +67,38 @@ bool initialise_window(void){
     circle.x_midpoint = 200;
     circle.y_midpoint = 100;
     circle.radius = PONG_BALL_RADIUS;
+
+    create_halfway_line();
 }
 
 
 void process_input(void){
     SDL_Event e;
-    while (SDL_PollEvent(&e) != FALSE){
 
+    while (SDL_PollEvent(&e) != FALSE){
        if(e.type == SDL_QUIT){
         game_running = false;
         return;
        }
 
        else if(e.type == SDL_KEYDOWN){
+        const Uint8* currentKeyStates = SDL_GetKeyboardState( NULL );
         switch (e.key.keysym.sym)
         {
-            case SDLK_ESCAPE:
+            case SDLK_ESCAPE :
                 game_running = false;
                 break;
             case SDLK_w:
-                left_paddle_movement -= PADDLE_SPEED_PER_SECOND;
+                move_paddle(&left_paddle, PADDLE_PIXEL_PER_SECOND * -1, &left_paddle_movement);
                 break;
             case SDLK_s:
-                left_paddle_movement += PADDLE_SPEED_PER_SECOND;
+                move_paddle(&left_paddle, PADDLE_PIXEL_PER_SECOND, &left_paddle_movement);
                 break;
             case SDLK_UP:
-                right_paddle_movement -= PADDLE_SPEED_PER_SECOND;
+                move_paddle(&right_paddle, PADDLE_PIXEL_PER_SECOND * -1, &right_paddle_movement);
                 break;
             case SDLK_DOWN:
-                right_paddle_movement += PADDLE_SPEED_PER_SECOND;
+                move_paddle(&right_paddle, PADDLE_PIXEL_PER_SECOND, &right_paddle_movement);
                 break;
         }
        }
@@ -122,28 +131,14 @@ void render(void){
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    // SDL_Rect fillRect = {
-    //     WINDOW_WIDTH / 4,
-    //     WINDOW_HEIGHT / 2,
-    //     WINDOW_WIDTH / 4,
-    //     WINDOW_HEIGHT / 2
-    // };
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
-    // SDL_Rect fillRect = {
-    //     100,
-    //     100,
-    //     100,
-    //     100
-    // };
-
-    SDL_SetRenderDrawColor(renderer,0xFF, 0x00, 0x00, 0xFF);
-    // SDL_RenderFillRect(renderer, &fillRect);
-
-    // SDL_RenderDrawPoint(renderer,400,400);
     SDL_RenderFillRect(renderer,&left_paddle);
     SDL_RenderFillRect(renderer,&right_paddle);
 
     draw_circle(circle.x_midpoint,circle.y_midpoint,circle.radius);
+
+    render_halfway_line();
 
     SDL_RenderPresent(renderer);
 }
@@ -161,5 +156,56 @@ void draw_circle(int x_pos_midpoint, int y_pos_midpoint, int radius){
         node *previous_value = coordinates;
         coordinates = coordinates -> next_ptr;
         free(previous_value);
+    }
+}
+
+void move_paddle(SDL_Rect* paddle, int direction, int* paddle_movement_variable){
+    if(paddle -> y <= 0 && direction < 0){
+        return;
+    }
+    else if(paddle -> y + PADDLE_HEIGHT >= WINDOW_HEIGHT && direction > 0){
+        return;
+    }
+    *paddle_movement_variable += direction;
+}
+
+void create_halfway_line(void){
+    int x_coord = (WINDOW_WIDTH / 2) - (CENTRE_RECTANGLE_WIDTH / 2);
+    int y_coord = 0;
+
+    while(y_coord < WINDOW_HEIGHT){
+        node* coordinates = malloc(sizeof(node));
+        coordinates -> coordinate[0] = x_coord;
+        coordinates -> coordinate[1] = y_coord;
+
+        coordinates -> next_ptr = NULL;
+
+        node* current_coordinate = middle_rectangle_coordinates;
+
+        if(coordinates == NULL){
+            printf("Error creating node pointer");
+            return;
+        }
+        if(middle_rectangle_coordinates == NULL){
+            middle_rectangle_coordinates = coordinates;
+        }
+        else{
+            while(current_coordinate -> next_ptr != NULL){
+                current_coordinate = current_coordinate -> next_ptr;
+            }
+            current_coordinate -> next_ptr = coordinates;
+        }
+        y_coord += CENTRE_RECTANGLE_GAP + CENTRE_RECTANGLE_HEIGHT;
+    }
+}
+
+void render_halfway_line(void){
+    node* current_coordinate = middle_rectangle_coordinates;
+
+    while (current_coordinate != NULL)
+    {
+        SDL_Rect middle_rect = {current_coordinate->coordinate[0],current_coordinate->coordinate[1],CENTRE_RECTANGLE_WIDTH,CENTRE_RECTANGLE_HEIGHT};;
+        SDL_RenderFillRect(renderer, &middle_rect);
+        current_coordinate = current_coordinate -> next_ptr;
     }
 }
