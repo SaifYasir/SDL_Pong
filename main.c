@@ -17,6 +17,8 @@ void draw_circle(int x_pos_midpoint, int y_pos_midpoint, int radius);
 void move_paddle(SDL_Rect* paddle, int direction, int* paddle_movement_variable);
 void create_halfway_line(void);
 void render_halfway_line(void);
+void destroy_node_list(node* list);
+void calculate_ball_movement(double *delta_time);
 
 bool game_running;
 SDL_Window* window;
@@ -31,11 +33,14 @@ SDL_Rect right_paddle = {WINDOW_WIDTH - PADDLE_DISTANCE_FROM_BORDER - PADDLE_WID
 int left_paddle_movement = 0;
 int right_paddle_movement = 0;
 
-struct circle{
+struct ball{
     int x_midpoint;
     int y_midpoint;
     int radius;
-} circle;
+
+    int x_pixels_per_sec;
+    int y_pixels_per_sec;
+} ball;
 
 int main(int argc, char *argv[]){
     game_running = initialise_window();
@@ -64,9 +69,11 @@ bool initialise_window(void){
 
     renderer = SDL_CreateRenderer(window, -1, 0);
 
-    circle.x_midpoint = 200;
-    circle.y_midpoint = 100;
-    circle.radius = PONG_BALL_RADIUS;
+    ball.x_midpoint = 200;
+    ball.y_midpoint = 400;
+    ball.x_pixels_per_sec = PONG_BALL_PIXELS_PER_SECOND_X;
+    ball.y_pixels_per_sec = PONG_BALL_PIXELS_PER_SECOND_Y;
+    ball.radius = PONG_BALL_RADIUS;
 
     create_halfway_line();
 }
@@ -113,18 +120,17 @@ void update(void){
     }
 
     //Get a delta time factory converted to seconds to be used to update my objects
-    float delta_time = (SDL_GetTicks64() - last_frame_time) / 1000.0f;
-
-    last_frame_time = SDL_GetTicks64();
+    double delta_time = (SDL_GetTicks64() - last_frame_time) / 1000.0f;
 
     left_paddle.y += left_paddle_movement * delta_time;
     right_paddle.y += right_paddle_movement * delta_time;
 
-    circle.x_midpoint+= PONG_BALL_SPEED_PER_SECOND * delta_time;
-    circle.y_midpoint+= PONG_BALL_SPEED_PER_SECOND * delta_time;
-
     left_paddle_movement = 0;
     right_paddle_movement = 0;
+
+    calculate_ball_movement(&delta_time);
+
+    last_frame_time = SDL_GetTicks64();
 }
 
 void render(void){
@@ -133,12 +139,12 @@ void render(void){
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
+    render_halfway_line();
+
     SDL_RenderFillRect(renderer,&left_paddle);
     SDL_RenderFillRect(renderer,&right_paddle);
 
-    draw_circle(circle.x_midpoint,circle.y_midpoint,circle.radius);
-
-    render_halfway_line();
+    draw_circle(ball.x_midpoint,ball.y_midpoint,ball.radius);
 
     SDL_RenderPresent(renderer);
 }
@@ -146,8 +152,17 @@ void render(void){
 void destroy_window(void){
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    destroy_node_list(middle_rectangle_coordinates);
     SDL_Quit();
 }
+
+void destroy_node_list(node* list){
+    while(list != NULL){
+        node* destroy_node = list;
+        list = list -> next_ptr;
+        free(destroy_node);
+    }
+} 
 
 void draw_circle(int x_pos_midpoint, int y_pos_midpoint, int radius){
     node *coordinates = get_hollow_circle(x_pos_midpoint,y_pos_midpoint,radius);
@@ -167,6 +182,35 @@ void move_paddle(SDL_Rect* paddle, int direction, int* paddle_movement_variable)
         return;
     }
     *paddle_movement_variable += direction;
+}
+
+void calculate_ball_movement(double *delta_time){
+    //because positions are counted in ints the decimal is left behind, this should be saved
+    static double x_ball_decimal_add = 0;
+    static double y_ball_decimal_add = 0;
+
+    x_ball_decimal_add += fmod((ball.x_pixels_per_sec * *delta_time),1);
+    y_ball_decimal_add += fmod((ball.y_pixels_per_sec * *delta_time),1);
+
+    //checks bottom of screen
+    if(ball.y_midpoint + ball.radius >= WINDOW_HEIGHT){
+        ball.y_pixels_per_sec = -ball.y_pixels_per_sec;
+    }
+    //checks top boundary
+    else if (ball.y_midpoint - ball.radius <= 0)
+    {
+        ball.y_pixels_per_sec = - ball.y_pixels_per_sec;
+    }
+    else{
+        ball.x_midpoint += (int)x_ball_decimal_add;
+        ball.y_midpoint += (int)y_ball_decimal_add;
+
+        x_ball_decimal_add -= (int)x_ball_decimal_add;
+        y_ball_decimal_add -= (int)y_ball_decimal_add;
+    }
+    
+    ball.x_midpoint += (int)(ball.x_pixels_per_sec * *delta_time);
+    ball.y_midpoint += (int)(ball.y_pixels_per_sec * *delta_time);
 }
 
 void create_halfway_line(void){
