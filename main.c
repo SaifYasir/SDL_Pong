@@ -195,11 +195,54 @@ void calculate_ball_movement(double *delta_time){
     //checks bottom of screen
     if(ball.y_midpoint + ball.radius >= WINDOW_HEIGHT){
         ball.y_pixels_per_sec = -ball.y_pixels_per_sec;
+        y_ball_decimal_add =  -y_ball_decimal_add;
+
+        ball.y_midpoint -= 1;
     }
     //checks top boundary
     else if (ball.y_midpoint - ball.radius <= 0)
     {
-        ball.y_pixels_per_sec = - ball.y_pixels_per_sec;
+        ball.y_pixels_per_sec = - ball.y_pixels_per_sec; 
+        y_ball_decimal_add =  -y_ball_decimal_add;
+
+        ball.y_midpoint += 1;
+    }
+    //check left paddle
+    else if (ball.x_midpoint - ball.radius == left_paddle.x + PADDLE_WIDTH)
+    {
+        //check bottom of ball for collision
+        if(ball.y_midpoint + ball.radius <= left_paddle.y + PADDLE_HEIGHT && ball.y_midpoint + ball.radius >= left_paddle.y){
+            ball.x_pixels_per_sec = - ball.x_pixels_per_sec; 
+            x_ball_decimal_add =  -x_ball_decimal_add;
+
+            ball.x_midpoint += 1;
+        }
+        //check top of ball for collision
+        else if(ball.y_midpoint - ball.radius <= left_paddle.y + PADDLE_HEIGHT && ball.y_midpoint - ball.radius >= left_paddle.y){
+            ball.x_pixels_per_sec = - ball.x_pixels_per_sec; 
+            x_ball_decimal_add =  -x_ball_decimal_add;
+
+            ball.x_midpoint += 1;
+        }
+        /* code */
+    }
+    //check right paddle
+    else if (ball.x_midpoint + ball.radius == right_paddle.x)
+    {
+        //check bottom of ball for collision
+        if(ball.y_midpoint + ball.radius <= right_paddle.y + PADDLE_HEIGHT && ball.y_midpoint + ball.radius >= right_paddle.y){
+            ball.x_pixels_per_sec = -ball.x_pixels_per_sec; 
+            x_ball_decimal_add =  -x_ball_decimal_add;
+
+            ball.x_midpoint -= 1;
+        }
+        //check top of ball for collision
+        else if(ball.y_midpoint - ball.radius <= right_paddle.y + PADDLE_HEIGHT && ball.y_midpoint - ball.radius >= right_paddle.y){
+           ball.x_pixels_per_sec = - ball.x_pixels_per_sec; 
+            x_ball_decimal_add =  -x_ball_decimal_add;
+
+            ball.x_midpoint -= 1;
+        }
     }
     else{
         ball.x_midpoint += (int)x_ball_decimal_add;
