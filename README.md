@@ -8,5 +8,5 @@ The game so far works, however only has basic functionality as of yet, however d
 - Pongball bounces off paddles at different angles
 - Sound for pongball collisions
 
-#Bugs to be fixed
+# Bugs to be fixed
 - Paddles not moving at the same time
